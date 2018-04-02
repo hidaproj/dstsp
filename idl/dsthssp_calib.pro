@@ -2,11 +2,11 @@
 ;  2017.02.06 T.A.
 
 
-@~anan/lib/ta_sinfit_mpfit.pro
-@~anan/lib/ta_ct_kuhn_0.pro
-@~anan/lib/DSTPOL//polarimeterlib_v2.pro
-@~anan/lib/DSTPOL//polarimeterlib_v3.pro
-@~anan/lib/ta_calib_hsp_mpfit.pro    
+@~/lib/ta_sinfit_mpfit.pro
+@~/lib/ta_ct_kuhn_0.pro
+@~/lib//polarimeterlib_v2.pro
+;@~anan/lib/DSTPOL/polarimeterlib_v3.pro
+@~/lib/ta_calib_hsp_mpfit.pro    
 
 ;--------------------------------
 pro plotres,stks,stds,hd,res,eps=eps,xx=xx,yy=yy,yfit=yfit,key=key,dx=dx,mms=mms,dd=dd
@@ -484,7 +484,6 @@ case uvalue of
     
            stks0=stks[0:40*(nf-1)+(size(iquv))[4]-1,*]
            stds0=stds[0:40*(nf-1)+(size(iquv))[4]-1,*]
-
            if (size(ref_index))[0] eq 1 then begin
               print,'comparing reference index'
               nhdcam1=n_elements(ref_index)
@@ -496,7 +495,7 @@ case uvalue of
                  if (i mod 10)  eq 0 then print,i,nhdcam1
                  tmp=min(abs(ref_time[i]-time0),pos)
                  hd[i]=hd0[pos]
-                 ;hd[i].polstate=ref_index[i].polstate
+                 hd[i].polstate=ref_index[i].polstate
                  stks[i,*]=stks0[pos,*]
                  stds[i,*]=stds0[pos,*]
               endfor
@@ -532,8 +531,7 @@ case uvalue of
 ;TEMPOLARY 2016.12.8 8542A
 ;bad=[116,104,12,29,40,60,100,120,150,160,190,220,240,250,260,320,350,377,378,379,where(hd.polstate eq 45)]
 ;TEMPOLARY 2016.12.8 10830A
-
-bad=[105,104,135,324,343,344,323,322,26,11,where(hd.polstate eq 45)]
+;bad=[105,104,135,324,343,344,323,322,26,11,where(hd.polstate eq 45)]
 nbad=n_elements(bad)
             if nbad ge 1 then print,'bad data :'+string(bad,format='(i5)')  
             pos=findgen(n_elements(hd))
@@ -624,7 +622,7 @@ nbad=n_elements(bad)
       set_plot,'ps'
       device,xsize=16,ysize=12,filename=outfile,/encapsulated,bits=8,/color
       !p.font=0
-      device,/tt_font,set_font='Times',font_size=12
+      idevice,/tt_font,set_font='Times',font_size=12
       !p.thick=4
       !x.thick=4 
       !y.thick=4
