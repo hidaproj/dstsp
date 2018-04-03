@@ -4,15 +4,14 @@
 ;2009-01-22 S.Jaeggli slight modification to streamline this code with
 ;Haosheng's procedure get_mm_inst.pro
 ;and corrected swap of c and d
-; 20170907 T.A. conyr
 
 ;function kuhn_coefs2, q, u, v, lambda0, dlambda, i0, i1, j0, j1, q2, u2, v2
-function ta_ct_kuhn, iquv, refxr,refyr,conyr,niquv,nov=nov,ab=ab,abcd=abcd,imax=imax
+function ta_ct_kuhn_0, iquv, refxr,refyr,niquv,nov=nov,ab=ab,abcd=abcd,imax=imax
 ; 
 ; iquv : array (xx,yy,iquv)
-; refxr: array (2) x range of reference Stokes profiles (pix)
-; refyr: array (2) wavelength range including line center (pix)
-; conyr: array (2) wide wavelength range of continuum (pix)
+; refxr: array (2) x range of reference stoes profiles
+; refyr: array (2) wavelength range of line center
+; conyr: array (2) wide wavelength range (pix)
 ; niquv: inverted IQUV
 ;
 
@@ -37,17 +36,15 @@ il0=refyr[0]
 il1=refyr[1]
 j0=refxr[0]
 j1=refxr[1]
-if n_elements(conyr) eq 2 then begin;20170907 TA
-efg=[median(q[conyr[0]:conyr[1],*]),	$
-	median(u[conyr[0]:conyr[1],*]),	$
-	median(v[conyr[0]:conyr[1],*])]
-;efg=[mean(q[refyr[0]:refyr[1],refxr[0]:refxr[1]]),	$
-;	mean(u[refyr[0]:refyr[1],refxr[0]:refxr[1]]),	$
-;	mean(v[refyr[0]:refyr[1],refxr[0]:refxr[1]])]
+;efg=[median(q[conyr[0]:conyr[1],*]),	$
+;	median(u[conyr[0]:conyr[1],*]),	$
+;	median(v[conyr[0]:conyr[1],*])]
+efg=[mean(q[refyr[0]:refyr[1],refxr[0]:refxr[1]]),	$
+	mean(u[refyr[0]:refyr[1],refxr[0]:refxr[1]]),	$
+	mean(v[refyr[0]:refyr[1],refxr[0]:refxr[1]])]
 q=q-efg[0]
 u=u-efg[1]
 v=v-efg[2]
-endif;20170907 TA
 ;---------------------;
 ;---- kuhn_coefs2 ----;
 num_spot=j1-j0+1
@@ -68,6 +65,7 @@ for j=0,ny-1 do begin
  uvec(j)=mean(u(il0:il1,j))
  vvec(j)=mean(v(il0:il1,j))
 endfor
+
 
 qumat=fltarr(2,num_spot)
 for j=j0,j1 do begin

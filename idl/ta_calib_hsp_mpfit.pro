@@ -136,8 +136,6 @@ function ta_calib_hsp_mpfit,stks,hd,par,fixed=fixed,draw=draw,  $
 ; p0   parameters of mm_dst, version 2
 common com,weight,ver,hds
 
-
-
 weight=10.
 
 if not keyword_set(fixed) then fixed=fltarr(45)
@@ -221,8 +219,7 @@ ir = [imgrot,imgrot,imgrot]
 az = [azimuth,azimuth,azimuth]
 
 key= fltarr(3*nd)
-
-
+;stop
 for kk=0,4 do begin
     case kk of
         0:pp=where(hd.polstate eq '')
@@ -230,8 +227,7 @@ for kk=0,4 do begin
         2:pp=where((hd.polstate eq '90') or (hd.polstate eq '270'))
         3:pp=where((hd.polstate eq '45') or (hd.polstate eq '225'))
         4:pp=where((hd.polstate eq '135') or (hd.polstate eq '315'))
-     endcase
- print,pp
+    endcase
     key[pp]=3*kk+0 & key[pp+nd]=3*kk+1 & key[pp+2*nd]=3*kk+2 
 endfor
 
