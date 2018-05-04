@@ -149,15 +149,15 @@ similar to widget `ndrk`, manually change how many flat files we want to use.
 
 ## widget `merginx`
 
-skip
+skip. it is set to `5` defaultly in other program.
 
 ## widget `merginy`
 
-skip
+skip. it is set to `5` defaultly in other program.
 
 ## widget `skipkxky`
 
-skip
+skip. normally we do not skip the calculation of `kx` and `ky`.
 
 ## widget `hazddir`
 
@@ -184,3 +184,111 @@ save,darks,dh,file=svdir+'dark.sav'
 
 > `dstsp_mkdark` comes from [https://github.com/hidaproj/dstsp/blob/master/idl/polarimeterlib_v3.pro#L339](https://github.com/hidaproj/dstsp/blob/master/idl/polarimeterlib_v3.pro#L339). still not sure what is going on inside this program. `dh`? index-like variable?
 
+## widget `prep_ref`
+
+first we calculate `KXKY`:
+
+```
+file=(file_search(wparam.dir,wparam.pq_file+'.fits',count=nf))[0:wparam.npq-1]
+nf=wparam.npq
+kx=fltarr(2,2,nf)
+ky=fltarr(2,2,nf)
+shiftx1=fltarr(nf)
+ii=0
+for i=0,nf-1 do begin
+	if (ii eq 0) then begin
+		dstsp_mkkxky,file[i],merginx=wparam.merginx,merginy=wparam.merginy,   $
+		    offx=0,offy=0,camera=wparam.camera,	$;keywords
+		    kx0,ky0,shiftx10,kxkyh0,outfile=0
+		ans=''
+		read,'save this result? y or n: ',ans
+		if ans eq 'y' then begin
+			kxkyh=kxkyh0
+			kx[*,*,ii]=kx0
+			ky[*,*,ii]=ky0
+			shiftx1[ii]=shiftx10
+			ii=ii+1
+		endif
+
+	endif else begin
+	;; lots fo code here
+	endelse
+endfor
+```
+
+`ii` is 0 until we enter `y` to confirm `kx` and `ky` calculated by program `dstsp_mkkxky`, so before we are satisfied we will be here again and again, running `i` from `0` to `nf-1`. `ii` is the index to identify which `kx` and `ky` work better.
+
+> `dstsp_mkkxky`, does the image restoration and position alignment.
+
+once `ii` is not `0`, we will move on to the next part, and will never go back to this part. in the next part, we will test whether the calculated `kx` and `ky` work well for other `ref*.fits` data.
+
+```
+for i=0,nf-1 do begin
+	if (ii eq 0) then begin
+		;; lots of code here
+	endif else begin
+		case wparam.camera of
+			'ge1650':mreadfits,file[i],index,data,/nodata
+			'xeva640':begin
+				mreadfits,file[i],index,data,/nodata
+					index=dstsp_mkindex(header=index,ver=2,    $
+					az=fltarr(n_elements(index)),imgrot=fltarr(n_elements(index)))
+				end
+			'orca4':begin
+				read_orca,file[i],index,data,/nodata
+					index=dstsp_mkindex(header=index,ver=1,    $
+					az=fltarr(n_elements(index)),imgrot=fltarr(n_elements(index)))
+				end
+			endcase
+		;; lots of code here
+	endelse
+endfor
+```
+
+according to which camera we used, we do or do not use function `dstsp_mkindex` to re-read variable `index`.
+
+> `dstsp_mkindex`, from [https://github.com/hidaproj/dstsp/blob/master/idl/polarimeterlib_v3.pro#L44](https://github.com/hidaproj/dstsp/blob/master/idl/polarimeterlib_v3.pro#L44), also appeared inside program `dstsp_mkdark`. I don't know what it is for.
+
+after this, we move on to 
+
+```
+for i=0,nf-1 do begin
+	if (ii eq 0) then begin
+		;; lots of code here
+	endif else begin
+		;; lots of code here
+		
+		pos=selectkxky(kxkyh,index[0])
+		if pos[0] eq -1 then begin
+			dstsp_mkkxky,file[i],merginx=wparam.merginx,merginy=wparam.merginy, $
+								   offx=0,offy=0,camera=wparam.camera, $;keywords
+			   kx0,ky0,shiftx10,kxkyh0,outfile=0
+			ans=''
+			read,'save this result? y or n: ',ans
+			if ans eq 'y' then begin
+				kx[*,*,ii]=kx0
+				ky[*,*,ii]=ky0
+				shiftx1[ii]=shiftx10
+				kxkyh=[kxkyh,kxkyh0]	
+				ii=ii+1
+			endif
+		endif
+	endelse
+endfor
+```
+
+if `pos[0] eq -1` which means the calculated `kx` and `ky` do not fit in well, we re-calculate `kx` and `ky` and then save into `ii`th `kx`,`ky` array.
+
+```
+kx=kx[*,*,0:ii-1]
+ky=ky[*,*,0:ii-1]
+shiftx1=shiftx1[0:ii-1]
+kxkyh=kxkyh[0:ii-1]
+save,kx,ky,shiftx1,kxkyh,file=svdir+'kxky.sav'
+```
+
+then we save those `kx`, `ky` which works well, and `shiftx1`, `kxkyh`.
+
+> what about those `ref*.fits` dataset without good `kx` and `ky`? here we do not have any variable to separate good data and bad data. `ii` is simply a counter.
+
+after restoration and alignment, we move on to the calculation of the retardation and offset angle of analyzer.
