@@ -292,3 +292,122 @@ then we save those `kx`, `ky` which works well, and `shiftx1`, `kxkyh`.
 > what about those `ref*.fits` dataset without good `kx` and `ky`? here we do not have any variable to separate good data and bad data. `ii` is simply a counter.
 
 after restoration and alignment, we move on to the calculation of the retardation and offset angle of analyzer.
+
+```
+restore,svdir+'dark.sav'
+```
+
+restore back our dark.
+
+```
+mq=0
+;if wparam.camera eq 'xeva640' then mq=1
+kxkyfile=svdir+'kxky.sav'
+restore,kxkyfile
+ss=size(kx)
+if ss[0] eq 2 then nf=1 else nf=ss[3]
+kxs=fltarr(4,nf)
+kys=fltarr(4,nf)
+for i=0,nf-1 do begin
+	kxs[*,i]=kx[*,*,i]
+	kys[*,i]=ky[*,*,i]
+endfor
+shiftx1s=shiftx1
+```
+
+- `kx`, `ky` --> `kxs`, `kys`. and their shape is changed.
+- `nf` now is the length of good reference datasets. but there is no guarantee that `[0:nf-1]` are all good dataset.
+- `shiftx1` --> `shiftx1s`, who saves the position where we cut one image into two.
+
+```
+files=(file_search(wparam.dir,wparam.pq_file+'.fits',count=nf))[0:wparam.npq-1]
+;; lots of code here
+nf=n_elements(files)
+rets=fltarr(nf)
+offsets=fltarr(nf)
+ratios=fltarr(nf)
+frates=fltarr(nf)
+```
+
+each dataset has its own *retardation*, *offset angle*, *intensity ratio* and *frame rate*.
+
+```
+iii=0
+for i=0,nf-1 do begin
+	print,i+1,nf
+	case wparam.camera of
+		'xeva640':begin
+			mreadfits,files[i],index,data
+			index=dstsp_mkindex(header=index,ver=2,    $
+				az=fltarr(n_elements(index)),imgrot=fltarr(n_elements(index)))
+		end
+		'ge1650':mreadfits,files[i],index,data
+		'orca4':begin
+			read_orca,files[i],index,data
+			index=dstsp_mkindex(header=index,ver=1,    $
+				az=fltarr(n_elements(index)),imgrot=fltarr(n_elements(index)))
+		end
+	endcase
+	hd=index[0]
+	nx=hd.naxis1
+	ny=hd.naxis2
+	nt=hd.naxis3
+	;; lots fo code here
+endfor
+```
+
+read `index` according to `wparam.camera`.
+
+```
+iii=0
+for i=0,nf-1 do begin
+	dpos=selectdark(dh,index[0])
+	if dpos[0] ne -1 then begin
+		dark=reform(rebin(darks[0:nx-1,0:ny-1,selectdark(dh,index[0])],nx,ny,1))
+	endif else begin
+		print,'no dark'
+		dark=fltarr(nx,ny)
+	endelse
+
+	pos=selectkxky(kxkyh,index[0])
+	if pos[0] ne -1 then begin
+			kx=kxs[*,pos]
+			ky=kys[*,pos]
+			shiftx1=shiftx1s[pos]
+	endif else begin
+			print,'no kx, ky'
+			stop
+	endelse
+endfor
+```
+
+- what is `selectdark` doing? why do we need to select `dark` data? anyway, after this we have our `dark` and if 'no dark' `dark` will be set to `0` array.
+- although we have no idea what `selectkxky` does for us, we guess it pick the good data for us according to `kxkyh` and `index[0]`. if `pos[0] eq -1`, it corresponds to those dataset where `kx`, `ky` are badly calculated. anyway, why do we need to `stop` here?
+
+we now have our `dark`, `kx`, `ky` and `shiftx1`.
+
+```
+data=reform((rebin(data[0:nx/2-1-shiftx1,*,*],1,ny,nt))[0,ny/2,1:*])
+```
+
+- take left image, average along the x(slit) direction
+- along wangelength direction, we pick the middle point, at `ny/2`
+- along time direction, we start from the second `[1:*]`. 
+
+> why do we need to throw away the first image?
+
+```
+xx=findgen(nt-1)+1.
+yfit=ta_sinfit_mpfit(xx,data,av=av,amp=amp,k=k,ph=ph,tprint=0)
+```
+
+without the first(`0`th) image, we now have `nt-1` points along time direction. `+1` is to ensure that `xx` starts from `1`.
+
+```
+wdef,1,400,400
+plot,xx,data,psym=1,title=string(i)
+oplot,xx,yfit
+```
+
+
+
