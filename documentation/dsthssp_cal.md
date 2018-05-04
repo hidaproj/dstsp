@@ -147,4 +147,40 @@ end
 ```
 similar to widget `ndrk`, manually change how many flat files we want to use.
 
-## widget 
+## widget `merginx`
+
+skip
+
+## widget `merginy`
+
+skip
+
+## widget `skipkxky`
+
+skip
+
+## widget `hazddir`
+
+```
+'hazddir':begin
+	wparam.hazddir=dialog_pickfile(path=wparam.hazddir,directory=1)
+	widget_CONTROL,windex.hazddir,set_value=wparam.hazddir
+end
+```
+
+select folder of hazd txt files
+
+## widget `prep_dark`
+
+```
+files=(file_search(wparam.dir,wparam.drk_file+'.fits',count=nf))[0:wparam.ndrk-1]
+dstsp_mkdark,files[0:wparam.ndrk-1],wparam.camera,darks,dh
+save,darks,dh,file=svdir+'dark.sav'
+```
+
+1. search for the first `wparam.ndrk` dark fits files
+2. calculate `darks` and `dh` with program `dstsp_mkdark`
+3. save `darks` and `dh` to for example `/sp_pub/save/20170827/camera02`, named `dark.sav`.
+
+> `dstsp_mkdark` comes from [https://github.com/hidaproj/dstsp/blob/master/idl/polarimeterlib_v3.pro#L339](https://github.com/hidaproj/dstsp/blob/master/idl/polarimeterlib_v3.pro#L339). still not sure what is going on inside this program. `dh`? index-like variable?
+
