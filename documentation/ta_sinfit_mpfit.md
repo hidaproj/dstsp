@@ -113,6 +113,8 @@ p0=[av,a,k,ph]
 - initial `k` : frequency with maximum power
 - initial initial phase `ph` : how many radiance it takes from initial data point to data's maximum.
 
+`-90.*!dtor` originate from that, the original curve is `cos` not `sin`
+
 ```
 sy	=	.02
 parinfo = replicate({value:0.D,fixed:0,  $
