@@ -402,12 +402,19 @@ yfit=ta_sinfit_mpfit(xx,data,av=av,amp=amp,k=k,ph=ph,tprint=0)
 ```
 
 without the first(`0`th) image, we now have `nt-1` points along time direction. `+1` is to ensure that `xx` starts from `1`.
+- `yfit` : the fitted curve
+- `av` : the fitted bias
+- `amp` : the fitted amplitude
+- `k` : the fitted angular frequency
+- `ph` : the fitted phase shift
 
 ```
 wdef,1,400,400
 plot,xx,data,psym=1,title=string(i)
 oplot,xx,yfit
 ```
+
+plot data points and fitted curve together to see whether fitting succeed.
 
 
 
